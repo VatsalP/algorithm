@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
-
-from .common import *
 from .deque import Deque
+from .common import *
 
 
 @dataclass
@@ -15,7 +14,7 @@ class Node:
 
 
 class LinkedList(Deque):
-    """An imlementation of singly linked list
+    """An imlementation of doubly linked list
     """
 
     def __init__(self):
@@ -30,7 +29,15 @@ class LinkedList(Deque):
         :param val: value to append to the list
         """
         new_node = Node(val, self.head)
-        self.head = new_node
+        if self.len > 1:
+            self.head.prev = new_node
+            self.head = new_node
+        elif self.len == 1:
+            self.head = new_node
+            self.tail.prev = new_node
+        else:
+            self.head = self.tail = new_node
+        self.len += 1
 
     def append(self, val: T):
         """
@@ -38,14 +45,16 @@ class LinkedList(Deque):
 
         :param val: value to append to the list
         """
-        last = None
-        for node in self:
-            last = node
-        new_node = Node(val)
-        if not last:
-            self.head = new_node
+        new_node = Node(val, None, self.tail)
+        if self.len > 1:
+            self.tail.next = new_node
+            self.tail = new_node
+        elif self.len == 1:
+            self.tail = new_node
+            self.head.next = new_node
         else:
-            last.next = new_node
+            self.head = self.tail = new_node
+        self.len += 1
 
     def insert(self, val: T, after: Node):
         """
@@ -56,23 +65,73 @@ class LinkedList(Deque):
         """
         for node in self:
             if node == after:
-                new_node = Node(val, node.next)
+                new_node = Node(val, node.next, after)
+                if node.next:
+                    node.next.prev = new_node
+                else:
+                    self.tail = new_node
                 node.next = new_node
+                self.len += 1
                 return
+
+    def popleft(self):
+        """
+        Pop leftmost element from the list
+        """
+        if self.len > 2:
+            self.head = self.head.next
+            self.head.prev = None
+            self.len -= 1
+        elif self.len == 2:
+            self.tail.prev = None
+            self.head = self.tail
+            self.len -= 1
+        elif self.len == 1:
+            self.head = self.tail = None
+            self.len -= 1
+        else:
+            raise IndexError("Can't popleft from an empty list")
+
+    def pop(self):
+        """
+        Pop rightmost element from the list
+        """
+        if self.len > 2:
+            self.tail = self.tail.prev
+            self.tail.next = None
+            self.len -= 1
+        elif self.len == 2:
+            self.head.next = None
+            self.tail = self.head
+            self.len -= 1
+        elif self.len == 1:
+            self.head = self.tail = None
+            self.len -= 1
+        else:
+            raise IndexError("Can't pop from an empty list")
 
     def delete(self, val: T):
         """
         Delete first given val from the linked list if present
         """
-        if self.head.val == val:
-            self.head = self.head.next
-            return
-        prev = None
         for node in self:
             if node.val == val:
-                prev.next = node.next
-                return
-            prev = node
+                if node == self.head:
+                    if node.next:
+                        self.head = node.next
+                        node.prev = None
+                    else:  # head == tail
+                        self.head = None
+                        self.tail = None
+                else:
+                    if node == self.tail:
+                        self.tail = node.prev
+                        self.tail.next = None
+                    else:
+                        prev = self.node.prev
+                        node.next.prev = prev
+                        prev.next = self.node.next
+                self.len -= 1
 
     @classmethod
     def from_iterator(cls, to_iter: Iterable[T]) -> 'LinkedList':
@@ -81,21 +140,29 @@ class LinkedList(Deque):
 
         :param to_iter: an iterable to iter on
         :type to_iter: Iterable[T]
-        :returns: A Doubly Linked List
+        :returns: A doubly Linked List
         :rtype: `LinkedList`
         """
         ret = cls()
-        node = None
         for i in iter(to_iter):
-            if not node:
-                ret.head = Node(i)
-                node = ret.head
-                ret.tail = ret.head
-            else:
-                new_node = Node(i)
-                node.next = new_node
-                node = new_node
+            ret.append(i)
         return ret
+
+    def loop(self) -> Generator[T, None, None]:
+        """Genertor to loop over the list values
+        """
+        node = self.head
+        while node:
+            yield node.val
+            node = node.next
+
+    def __reversed__(self) -> Generator[T, None, None]:
+        """Generator to loop over list in reverse
+        """
+        node = self.tail
+        while node:
+            yield node
+            node = node.prev
 
     def __iter__(self) -> Generator[T, None, None]:
         """Genertor to loop over the list
@@ -106,10 +173,12 @@ class LinkedList(Deque):
             node = node.next
 
     def __len__(self):
+        """Return length of the list
+        """
         return self.len
 
     def __str__(self):
         ret = []
         for i in iter(self):
             ret.append(str(i.val))
-        return "->".join(ret)
+        return "<->".join(ret)
