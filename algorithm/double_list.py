@@ -1,3 +1,10 @@
+"""
+double_list.py
+==============
+
+Provide implementation for a Doubly Linked List
+which also implements `Deque`
+"""
 from dataclasses import dataclass
 
 from .deque import Deque
@@ -128,9 +135,9 @@ class LinkedList(Deque):
                         self.tail = node.prev
                         self.tail.next = None
                     else:
-                        prev = self.node.prev
+                        prev = node.prev
                         node.next.prev = prev
-                        prev.next = self.node.next
+                        prev.next = node.next
                 self.len -= 1
 
     @classmethod

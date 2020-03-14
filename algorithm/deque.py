@@ -1,3 +1,10 @@
+"""
+deque.py
+========
+
+Provides `Deque` abstract class to be implemented by
+other Classes.
+"""
 from abc import ABC, abstractmethod
 
 from .common import *
